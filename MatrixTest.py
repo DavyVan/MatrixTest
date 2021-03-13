@@ -6,11 +6,6 @@ import string
 
 from Utils import *
 
-COLOR_OK = "\033[92m"
-COLOR_FAIL = "\033[91m"
-COLOR_WARNING = "\033[93m"
-COLOR_NORMAL = "\033[0m"
-
 
 class MatrixTest:
     """
@@ -72,7 +67,7 @@ class MatrixTest:
         :param matrix:
         :param parser:
         """
-        colorama.init()     # enable ANSI support on Windows for colored output
+        colorama.init()  # enable ANSI support on Windows for colored output
 
         self.__cmd = cmd
         self.__matrix = matrix
@@ -100,32 +95,33 @@ class MatrixTest:
 
     def run(self, repeat: int = 1) -> None:
         # initialize the result matrix
-        results_columns = ["full_cmd"]
+        results_columns = ["cmd_full"]
         results_columns += self.__arg_keys
-        for i in range(repeat):
-            results_columns.append("attempt_" + str(i+1))
+        # TODO: remove data type inference
+        # for i in range(repeat):
+        #     results_columns.append("attempt" + str(i+1))
         results = pd.DataFrame(columns=results_columns)
-
-        # infer the result type from parser type hint
-        parser_type_hints = get_type_hints(self.__parser)
-        if "return" in parser_type_hints:
-            parser_return_type = parser_type_hints["return"]
-            df_type_str = ""
-            if issubclass(parser_return_type, int):
-                df_type_str = "int32"
-            elif issubclass(parser_return_type, str):
-                df_type_str = "string"
-            else:
-                df_type_str = "object"
-
-            print_info("Result date type has been inferred as " + df_type_str)
-
-            new_types = {}
-            for i in range(repeat):
-                new_types["attempt_"+str(i+1)] = df_type_str
-            results.astype(new_types)
-        else:
-            print_info("Cannot infer result data type, will store results as string.")
+        #
+        # # infer the result type from parser type hint
+        # parser_type_hints = get_type_hints(self.__parser)
+        # if "return" in parser_type_hints:
+        #     parser_return_type = parser_type_hints["return"]
+        #     df_type_str = ""
+        #     if issubclass(parser_return_type, int):
+        #         df_type_str = "int64"
+        #     elif issubclass(parser_return_type, str):
+        #         df_type_str = "string"
+        #     elif issubclass(parser_return_type, float):
+        #         df_type_str = "float64"
+        #
+        #     if df_type_str != "":
+        #         print_info("Result data type has been inferred as " + df_type_str)
+        #         new_types = {}
+        #         for i in range(repeat):
+        #             new_types["attempt" + str(i + 1)] = df_type_str
+        #         results.astype(new_types)
+        # else:
+        #     print_info("Result data type will be inferred automatically by pandas")
 
         # configure the arg fields and run
         # init
@@ -140,21 +136,30 @@ class MatrixTest:
                 args[self.__arg_keys[i]] = self.__matrix[self.__arg_keys[i]][key_index[i]]
 
             current_cmd = self.__cmd.format_map(args)
-            print("Running: " + current_cmd + "...", end="")
+            print("Running: " + current_cmd + "...")
 
             # run
-            for _t in range(repeat):
-                print(str(_t+1) + "...", end="")
+            record = {"cmd_full": current_cmd}
+            record.update(args)
+            for attempt in range(repeat):
+                print("Attempt " + str(attempt + 1) + "...", end="")
                 current_result = subprocess.run(current_cmd, stdout=subprocess.PIPE, text=True, shell=True)
                 if current_result.returncode != 0:
                     print_warning("Return code is " + str(current_result.returncode))
+                else:
+                    print_ok("Success")
                 # print(current_result.stdout)
 
                 # parse the result
                 current_result_parsed = self.__parser(str(current_result.stdout))
 
                 # record the result
-            print("Done.")
+                if isinstance(current_result_parsed, dict):  # if the parser function returns a dict (multiple results)
+                    for key in current_result_parsed:
+                        record["attempt" + str(attempt + 1) + "_" + key] = current_result_parsed[key]
+                else:       # single result
+                    record["attempt" + str(attempt + 1)] = current_result_parsed
+            results = results.append(record, ignore_index=True)
 
             # get the next or break
             i = self.__nargs - 1
@@ -165,7 +170,10 @@ class MatrixTest:
                     i -= 1
                 else:
                     break
-            if i == -1:     # finished all test cases
+            if i == -1:  # finished all test cases
                 break
+        print("All done.")
         # exit(0)
         # print(results)
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+            print(results)

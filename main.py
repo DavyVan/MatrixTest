@@ -1,18 +1,25 @@
 import MatrixTest
 
 
-def parser(stdout: str) -> str:
+def parser(stdout: str):
     lines = stdout.splitlines()
-    print(lines)
-    return "hello"
+    result = {}
+    result["lineCount"] = len(lines)
+    result["programName"] = lines[0]
+    # return len(lines)
+    return result
 
 
 def main():
-    mt = MatrixTest.MatrixTest("dir F:\\坚果云\\CRPG-Book-Chinese\\{path}", {"path": ["宣传材料", "归档"]}, parser)
-    mt.run()
+    args = {
+        "arg1": ["arg1_1", "arg1_2"],
+        "arg2": ["arg2_1", "arg2_2", "arg2_3"],
+        "arg3": ["arg3_1"]
+    }
+    mt = MatrixTest.MatrixTest("python E:\\MatrixTest\\cmd_example_program.py {arg1} {arg2} {arg3}", args, parser)
+    # mt.run()
     mt.run(3)
 
 
 if __name__ == '__main__':
     main()
-
