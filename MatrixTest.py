@@ -1,4 +1,4 @@
-from typing import Dict, List, Callable, Any, get_type_hints
+from typing import Dict, List, Callable, Any, get_type_hints, Union
 import subprocess
 import pandas as pd
 import colorama
@@ -60,7 +60,7 @@ class MatrixTest:
         fields_cmd.sort()
         return fields_matrix == fields_cmd
 
-    def __init__(self, cmd: str, matrix: Dict[str, List[str]], parser: Callable[[str], Any]):
+    def __init__(self, cmd: str, matrix: Dict[str, List[str]], parser: Callable[[str], Any] = None):
         """
 
         :param cmd:
@@ -71,7 +71,12 @@ class MatrixTest:
 
         self.__cmd = cmd
         self.__matrix = matrix
-        self.__parser = parser
+        if parser is None:
+            print_warning(
+                "No parser function received. The outputs of commands will be stored as string without parsing.")
+            self.__parser = default_parser
+        else:
+            self.__parser = parser
 
         # check the command format
         print("Checking command line format...", end="")
@@ -93,7 +98,16 @@ class MatrixTest:
             print_aborted()
             exit(1)
 
+        # declare variables for a single run
+        self.__last_result = None
+        self.__last_repeat = 0
+
     def run(self, repeat: int = 1) -> None:
+        if repeat < 1:
+            print_error("repeat must be at least 1.")
+            print_aborted()
+        self.__last_repeat = repeat
+
         # initialize the result matrix
         results_columns = ["cmd_full"]
         results_columns += self.__arg_keys
@@ -136,7 +150,7 @@ class MatrixTest:
                 args[self.__arg_keys[i]] = self.__matrix[self.__arg_keys[i]][key_index[i]]
 
             current_cmd = self.__cmd.format_map(args)
-            print("Running: " + current_cmd + "...")
+            print("Running: " + current_cmd)
 
             # run
             record = {"cmd_full": current_cmd}
@@ -145,7 +159,9 @@ class MatrixTest:
                 print("Attempt " + str(attempt + 1) + "...", end="")
                 current_result = subprocess.run(current_cmd, stdout=subprocess.PIPE, text=True, shell=True)
                 if current_result.returncode != 0:
-                    print_warning("Return code is " + str(current_result.returncode))
+                    print_error("Return code is " + str(current_result.returncode))
+                    print_error("STDERR:" + str(current_result.stderr))
+                    print_error("STDOUT:" + str(current_result.stdout))
                 else:
                     print_ok("Success")
                 # print(current_result.stdout)
@@ -172,8 +188,56 @@ class MatrixTest:
                     break
             if i == -1:  # finished all test cases
                 break
+
+        self.__last_result = results
         print("All done.")
-        # exit(0)
-        # print(results)
-        with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
-            print(results)
+
+    def get_last_result(self) -> pd.DataFrame:
+        """
+
+        :return: pandas.DataFrame. Return the internal dataframe storing the final results.
+        """
+        return self.__last_result
+
+    def average(self, column: Union[str, List[str]]) -> None:
+        """
+        This function compute the arithmetic mean of selected columns.
+        The results will store in the same dataframe with names of "avg_*".
+
+        :param column: str or List of str. Name(s) of selected column(s). If any column does not exist in the result, the
+                    calculation will be skipped. Generally, this should be a subset of the keys returned by the parser function.
+        """
+
+        # convert the str to List[str]. Will use List anyway in the following
+        if isinstance(column, str):
+            column = [column]
+
+        # check column
+        columns = self.__last_result.columns
+        for item in column:
+            t = "attempt1_" + item      # only check one of them
+            found = False
+            for col in columns:
+                if t == col:
+                    found = True
+                    break
+            if not found:
+                print_warning("The calculation of mean is skipped for %s is skipped because we cannot find it in the last result" % item)
+                column.remove(item)
+
+        # calculate start
+        dtypes = self.__last_result.dtypes
+        for item in column:
+            # construct column names
+            columns_in_result = []
+            for i in range(self.__last_repeat):
+                columns_in_result.append("attempt%d_%s" % (i+1, item))
+
+            # check data types
+            for col in columns_in_result:
+                if not pd.api.types.is_numeric_dtype(self.__last_result[col]):
+                    print_warning("The column %s is not in numeric type, may produce unexpected results." % col)
+
+            # execute calculation
+            self.__last_result["avg_"+item] = self.__last_result[columns_in_result].mean(axis=1, numeric_only=True)
+

@@ -17,8 +17,16 @@ def print_error(msg: str):
 
 
 def print_aborted():
+    """
+    This function will print and then abort.
+    """
     print(COLOR_FAIL + "Aborted." + COLOR_NORMAL)
+    exit(1)
 
 
 def print_info(msg: str):
     print("INFO: " + msg)
+
+
+def default_parser(stdout: str) -> str:
+    return stdout
