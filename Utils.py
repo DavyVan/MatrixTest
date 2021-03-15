@@ -4,8 +4,8 @@ COLOR_WARNING = "\033[93m"
 COLOR_NORMAL = "\033[0m"
 
 
-def print_ok(msg: str = "OK"):
-    print(COLOR_OK + msg + COLOR_NORMAL + ".")
+def print_ok(msg: str = "OK."):
+    print(COLOR_OK + msg + COLOR_NORMAL)
 
 
 def print_warning(msg: str):
