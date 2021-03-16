@@ -1,15 +1,15 @@
-from typing import Dict, List, Callable, Any, get_type_hints, Union, Optional
+from typing import Dict, List, Callable, Any, Union, Optional
 import subprocess
 import pandas as pd
 import colorama
 import string
 
-from Utils import *
+from .Utils import *
 
 
-class MatrixTest:
+class MatrixTestRunner:
     """
-    MatrixTest is the all-in-one class to create a test suite with multi-dimensional test matrix.
+    MatrixTestRunner is the all-in-one class to create a test suite with multi-dimensional test matrix.
     Please do not reuse one instance of this class for multiple tests.
     """
 
@@ -252,7 +252,7 @@ class MatrixTest:
             self.__last_result["avg_"+item] = self.__last_result[columns_in_result].mean(axis=1, numeric_only=True)
             self.__last_aggregated_columns.append("avg_"+item)
 
-    def export_excel(self, path: str, include_agg: bool = True, include_raw: bool = True) -> None:
+    def to_excel(self, path: str, include_agg: bool = True, include_raw: bool = True) -> None:
         """
         Export to Excel spreadsheet.
 

@@ -1,14 +1,14 @@
 import MatrixTest
 import random
-import pandas as pd
 
 
 def parser(stdout: str):
     lines = stdout.splitlines()
-    result = {}
-    result["lineCount"] = len(lines)
-    result["programName"] = lines[0]
-    result["random"] = random.randint(1, 10)
+    result = {
+        "lineCount": len(lines),
+        "programName": lines[0],
+        "random": random.randint(1, 10)
+    }
     # return len(lines)
     return result
 
@@ -19,20 +19,20 @@ def main():
         "arg2": ["arg2_1", "arg2_2", "arg2_3"],
         "arg3": ["arg3_1"]
     }
-    mt = MatrixTest.MatrixTest("python E:\\MatrixTest\\cmd_example_program.py {arg1} {arg2} {arg3}", args, parser)
+    mtr = MatrixTest.MatrixTestRunner("python E:\\MatrixTest\\cmd_example_program.py {arg1} {arg2} {arg3}", args, parser)
 
-    # mt.run()
-    mt.run(3)
-    results = mt.get_last_result()
+    # mtr.run()
+    mtr.run(3)
+    results = mtr.get_last_result()
     # with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
     #     print(results)
 
-    mt.average(["random", "lineCount"])
-    # mt.average()
+    mtr.average(["random", "lineCount"])
+    # mtr.average()
     # with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
     # print(results)
 
-    mt.export_excel("E:\\MatrixTest\\example_output.xlsx", include_agg=True, include_raw=True)
+    mtr.to_excel("E:\\MatrixTest\\example_output.xlsx", include_agg=True, include_raw=True)
 
 
 if __name__ == '__main__':
