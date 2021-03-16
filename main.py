@@ -14,12 +14,13 @@ def parser(stdout: str):
 
 
 def main():
+    cmd_template = "python E:\\MatrixTest\\cmd_example_program.py {arg1} {arg2} {arg3}"
     args = {
         "arg1": ["arg1_1", "arg1_2"],
         "arg2": ["arg2_1", "arg2_2", "arg2_3"],
         "arg3": ["arg3_1"]
     }
-    mtr = MatrixTest.MatrixTestRunner("python E:\\MatrixTest\\cmd_example_program.py {arg1} {arg2} {arg3}", args, parser)
+    mtr = MatrixTest.MatrixTestRunner(cmd_template, args, parser)
 
     # mtr.run()
     mtr.run(3)
