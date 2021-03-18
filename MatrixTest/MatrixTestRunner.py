@@ -217,7 +217,7 @@ class MatrixTestRunner:
             column = []
             for col in columns:
                 if col.startswith("attempt1_"):
-                    column.append(col.removeprefix("attempt1_"))
+                    column.append(removeprefix(col, "attempt1_"))
 
         # convert the str to List[str]. Will use List anyway in the following
         if isinstance(column, str):

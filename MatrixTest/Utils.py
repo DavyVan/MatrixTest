@@ -1,3 +1,5 @@
+import sys
+
 COLOR_OK = "\033[92m"
 COLOR_FAIL = "\033[91m"
 COLOR_WARNING = "\033[93m"
@@ -30,3 +32,14 @@ def print_info(msg: str):
 
 def default_parser(stdout: str) -> str:
     return stdout
+
+
+def removeprefix(long: str, prefix: str) -> str:
+    major, minor, _, _, _ = sys.version_info
+    if major >= 3 and minor >= 9:
+        return long.removeprefix(prefix)
+    else:
+        if long.startswith(prefix):
+            return long[len(prefix):]
+        else:
+            return long
