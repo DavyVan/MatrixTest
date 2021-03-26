@@ -3,6 +3,8 @@ import subprocess
 import pandas as pd
 import colorama
 import string
+import shutil
+import textwrap
 
 from .Utils import *
 
@@ -60,7 +62,7 @@ class MatrixTestRunner:
         fields_cmd.sort()
         return fields_matrix == fields_cmd
 
-    def __init__(self, cmd: str, matrix: Dict[str, List[str]], parser: Callable[[str], Any] = None):
+    def __init__(self, cmd: str, matrix: Dict[str, List[str]], parser: Callable[[str], Any] = None, enable_echo: bool = False):
         """
 
         :param cmd:
@@ -103,41 +105,24 @@ class MatrixTestRunner:
         self.__last_repeat = 0
         self.__last_aggregated_columns = []
 
+        # options
+        self.__option_echo = enable_echo
+        self.__terminal_width, _ = shutil.get_terminal_size()       # this is used by self.__option_echo
+
     def run(self, repeat: int = 1) -> None:
         if repeat < 1:
             print_error("repeat must be at least 1.")
             print_aborted()
         self.__last_repeat = repeat
         self.__last_aggregated_columns = []     # clear
+        tw = textwrap.TextWrapper(width=self.__terminal_width-1)
 
         # initialize the result matrix
         results_columns = ["cmd_full"]
         results_columns += self.__arg_keys
-        # TODO: remove data type inference
         # for i in range(repeat):
         #     results_columns.append("attempt" + str(i+1))
         results = pd.DataFrame(columns=results_columns)
-        #
-        # # infer the result type from parser type hint
-        # parser_type_hints = get_type_hints(self.__parser)
-        # if "return" in parser_type_hints:
-        #     parser_return_type = parser_type_hints["return"]
-        #     df_type_str = ""
-        #     if issubclass(parser_return_type, int):
-        #         df_type_str = "int64"
-        #     elif issubclass(parser_return_type, str):
-        #         df_type_str = "string"
-        #     elif issubclass(parser_return_type, float):
-        #         df_type_str = "float64"
-        #
-        #     if df_type_str != "":
-        #         print_info("Result data type has been inferred as " + df_type_str)
-        #         new_types = {}
-        #         for i in range(repeat):
-        #             new_types["attempt" + str(i + 1)] = df_type_str
-        #         results.astype(new_types)
-        # else:
-        #     print_info("Result data type will be inferred automatically by pandas")
 
         # configure the arg fields and run
         # init
@@ -158,18 +143,38 @@ class MatrixTestRunner:
             record = {"cmd_full": current_cmd}
             record.update(args)
             for attempt in range(repeat):
-                print("Attempt " + str(attempt + 1) + "...", end="")
-                current_result = subprocess.run(current_cmd, stdout=subprocess.PIPE, text=True, shell=True)
-                if current_result.returncode != 0:
-                    print_error("Return code is " + str(current_result.returncode))
-                    print_error("STDERR:" + str(current_result.stderr))
-                    print_error("STDOUT:" + str(current_result.stdout))
+                prefix = "Attempt " + str(attempt + 1) + "..."
+                tw.initial_indent = ' '*len(prefix) + '|'
+                tw.subsequent_indent = ' '*len(prefix) + '|'
+                if self.__option_echo:
+                    print(("{:-<%d}" % (self.__terminal_width-1)).format(prefix+'+'))
                 else:
+                    print(prefix, end="")
+
+                stdout = ""
+
+                proc = subprocess.Popen(current_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+
+                for line in proc.stdout:
+                    if self.__option_echo:
+                        print(tw.fill(line))
+                    stdout += line
+
+                returncode = proc.wait()
+
+                if self.__option_echo:
+                    print(("{:-<%d}" % (self.__terminal_width-1)).format(' '*len(prefix)+'+'))
+
+                if returncode != 0:
+                    print_error("Return code is " + str(returncode))
+                    print_error("STDOUT:" + str(stdout))
+                else:
+                    if self.__option_echo:
+                        print(prefix, end="")
                     print_ok("Success")
-                # print(current_result.stdout)
 
                 # parse the result
-                current_result_parsed = self.__parser(str(current_result.stdout))
+                current_result_parsed = self.__parser(str(stdout))
 
                 # record the result
                 if isinstance(current_result_parsed, dict):  # if the parser function returns a dict (multiple results)
@@ -290,3 +295,9 @@ class MatrixTestRunner:
                 columns_list.remove(item)
         self.__last_result.to_excel(path, sheet_name="MatrixTest", columns=columns_list, index=False)
         print_ok("Done.")
+
+    def enable_echo(self) -> None:
+        self.__option_echo = True
+
+    def disable_echo(self) -> None:
+        self.__option_echo = False

@@ -162,7 +162,7 @@ The first parameter is the output file path. Also, you can choose whether includ
 Files of this example are available at:
 
 * [cmd_example_program.py](cmd_example_program.py)
-* [main.py](main.py)
+* [example.py](example.py)
 * [example_output.xlsx](example_output.xlsx)
 
 # Contributing
