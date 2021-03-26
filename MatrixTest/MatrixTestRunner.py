@@ -144,8 +144,8 @@ class MatrixTestRunner:
             record.update(args)
             for attempt in range(repeat):
                 prefix = "Attempt " + str(attempt + 1) + "..."
-                tw.initial_indent = ' '*len(prefix) + '|'
-                tw.subsequent_indent = ' '*len(prefix) + '|'
+                tw.initial_indent = ' '*len(prefix) + '| '
+                tw.subsequent_indent = ' '*len(prefix) + '| '
                 if self.__option_echo:
                     print(("{:-<%d}" % (self.__terminal_width-1)).format(prefix+'+'))
                 else:
