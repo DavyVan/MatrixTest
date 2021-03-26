@@ -12,7 +12,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('.'))
+sys.path.append(os.path.join(os.path.abspath(os.pardir)))
 
 
 # -- Project information -----------------------------------------------------
@@ -32,6 +32,7 @@ release = '1.0.0'
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.linkcode",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -48,7 +49,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'bizstyle'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -56,3 +57,12 @@ html_theme = 'alabaster'
 html_static_path = ['_static']
 
 source_suffix = '.rst'
+
+
+def linkcode_resolve(domain, info):
+    if domain != 'py':
+        return None
+    if not info['module']:
+        return None
+    filename = info['module'].replace('.', '/')
+    return "https://github.com/DavyVan/MatrixTest/tree/master/%s.py" % filename

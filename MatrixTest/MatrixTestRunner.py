@@ -64,11 +64,16 @@ class MatrixTestRunner:
 
     def __init__(self, cmd: str, matrix: Dict[str, List[str]], parser: Callable[[str], Any] = None, enable_echo: bool = False):
         """
+        Instantiate ``MatrixTestRunner``, checking the user input and initializing options.
 
-        :param cmd:
-        :param matrix:
-        :param parser:
+        For the tutorial please move to `Github <https://github.com/DavyVan/MatrixTest>`_
+
+        :param cmd: The command line template string, which follows the ``string.Formatter`` style.
+        :param matrix: The possible arguments.
+        :param parser: The parser function.
+        :param enable_echo: If ``True``, the ``stdout`` and ``stderr`` of the the command will be piped and print in real time.
         """
+
         colorama.init()  # enable ANSI support on Windows for colored output
 
         self.__cmd = cmd
@@ -110,6 +115,13 @@ class MatrixTestRunner:
         self.__terminal_width, _ = shutil.get_terminal_size()       # this is used by self.__option_echo
 
     def run(self, repeat: int = 1) -> None:
+        """
+        Run the test suite and record the results.
+
+        :param repeat: The number of times the test should be repeated for.
+        :return: None. The results will be stored internally. You can use :func:`get_last_result` to get the last result
+            as a `pandas.DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
+        """
         if repeat < 1:
             print_error("repeat must be at least 1.")
             print_aborted()
@@ -202,7 +214,7 @@ class MatrixTestRunner:
     def get_last_result(self) -> pd.DataFrame:
         """
 
-        :return: pandas.DataFrame. Return the internal dataframe storing the final results.
+        :return: Return the internal dataframe storing the final results.
         """
         return self.__last_result
 
@@ -297,7 +309,19 @@ class MatrixTestRunner:
         print_ok("Done.")
 
     def enable_echo(self) -> None:
+        """
+        Enable echo feature, output the ``cmd``'s ``stdout`` in real time.
+
+        :return: None
+        """
         self.__option_echo = True
 
     def disable_echo(self) -> None:
+        """
+        Disable echo feature.
+
+        :return: None
+
+        See also: :func:`enable_echo`
+        """
         self.__option_echo = False
