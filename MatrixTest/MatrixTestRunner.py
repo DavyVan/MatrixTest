@@ -7,6 +7,7 @@ import shutil
 import textwrap
 
 from .Utils import *
+from .Printers import *
 
 
 class MatrixTestRunner:
@@ -109,22 +110,40 @@ class MatrixTestRunner:
         self.__last_result = None   # type: Optional[pd.DataFrame]
         self.__last_repeat = 0
         self.__last_aggregated_columns = []
+        # log to file
+        self.__log_enabled = False
+        self.__log_fd = None        # type: Optional[io.TextIOBase]
+        self.__log_file = None       # type: Optional[str]
 
         # options
         self.__option_echo = enable_echo
         self.__terminal_width, _ = shutil.get_terminal_size()       # this is used by self.__option_echo
 
-    def run(self, repeat: int = 1) -> None:
+    def run(self, repeat: int = 1, logfile: str = None) -> None:
         """
         Run the test suite and record the results.
 
         :param repeat: The number of times the test should be repeated for.
+        :param logfile: If given a file path, all the output (stdout) **of this function** will also be written to that file (in append mode).
+            The content of this file will also be controlled by whether the echo feature is enabled or not
+            (see also :func:`__init__`, :func:`enable_echo`, and :func:`disable_echo`).
         :return: None. The results will be stored internally. You can use :func:`get_last_result` to get the last result
             as a `pandas.DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
         """
+        # log to file
+        if logfile is not None:
+            self.__log_file = logfile
+            self.__log_enabled = True
+            self.__log_fd = open(self.__log_file, 'a')  # in append mode
+            print("Console output will be written to " + self.__log_file)
+        else:
+            self.__log_file = None
+            self.__log_fd = None
+            self.__log_enabled = False
+
         if repeat < 1:
-            print_error("repeat must be at least 1.")
-            print_aborted()
+            print_error("repeat must be at least 1.", self.__log_fd)
+            print_aborted(self.__log_fd)
         self.__last_repeat = repeat
         self.__last_aggregated_columns = []     # clear
         tw = textwrap.TextWrapper(width=self.__terminal_width-1)
@@ -149,7 +168,7 @@ class MatrixTestRunner:
                 args[self.__arg_keys[i]] = self.__matrix[self.__arg_keys[i]][key_index[i]]
 
             current_cmd = self.__cmd.format_map(args)
-            print("Running: " + current_cmd)
+            print_plain("Running: " + current_cmd, self.__log_fd)
 
             # run
             record = {"cmd_full": current_cmd}
@@ -159,9 +178,9 @@ class MatrixTestRunner:
                 tw.initial_indent = ' '*len(prefix) + '| '
                 tw.subsequent_indent = ' '*len(prefix) + '| '
                 if self.__option_echo:
-                    print(("{:-<%d}" % (self.__terminal_width-1)).format(prefix+'+'))
+                    print_plain(("{:-<%d}" % (self.__terminal_width-1)).format(prefix+'+'), self.__log_fd)
                 else:
-                    print(prefix, end="")
+                    print_plain(prefix, self.__log_fd, end="")
 
                 stdout = ""
 
@@ -169,21 +188,21 @@ class MatrixTestRunner:
 
                 for line in proc.stdout:
                     if self.__option_echo:
-                        print(tw.fill(line))
+                        print_plain(tw.fill(line), self.__log_fd)
                     stdout += line
 
                 returncode = proc.wait()
 
                 if self.__option_echo:
-                    print(("{:-<%d}" % (self.__terminal_width-1)).format(' '*len(prefix)+'+'))
+                    print_plain(("{:-<%d}" % (self.__terminal_width-1)).format(' '*len(prefix)+'+'), self.__log_fd)
 
                 if returncode != 0:
-                    print_error("Return code is " + str(returncode))
-                    print_error("STDOUT:" + str(stdout))
+                    print_error("Return code is " + str(returncode), self.__log_fd)
+                    print_error("STDOUT:" + str(stdout), self.__log_fd)
                 else:
                     if self.__option_echo:
-                        print(prefix, end="")
-                    print_ok("Success")
+                        print_plain(prefix, self.__log_fd, end="")
+                    print_ok("Success", self.__log_fd)
 
                 # parse the result
                 current_result_parsed = self.__parser(str(stdout))
@@ -209,7 +228,9 @@ class MatrixTestRunner:
                 break
 
         self.__last_result = results
-        print("All done.")
+        print_plain("All done.", self.__log_fd)
+        if self.__log_enabled:
+            self.__log_fd.close()
 
     def get_last_result(self) -> pd.DataFrame:
         """

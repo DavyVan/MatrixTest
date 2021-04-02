@@ -13,6 +13,7 @@ If you are looking for the tutorial, please go to `Github <https://github.com/Da
    :caption: Contents:
 
    MatrixTestRunner
+   Printers
    Utils
 
 

@@ -3,12 +3,16 @@
 [![PyPI](https://img.shields.io/pypi/v/MatrixTest)](https://pypi.org/project/MatrixTest/)
 [![GitHub](https://img.shields.io/github/license/DavyVan/MatrixTest)](https://github.com/DavyVan/MatrixTest)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/MatrixTest)](https://pypi.org/project/MatrixTest/)
+[![Read the Docs](https://img.shields.io/readthedocs/matrixtest)](https://matrixtest.readthedocs.io/en/latest/)
 
 `MatrixTest` is a tool for matrix test where you have to run a cluster of similar shell commands.
 When these commands have similar pattern, they are just combinations of different arguments (including argument 0, the executable itself).
 Using `MatrixTest`, the only a few things you need to do are: configure, run, and output.
 By providing a formatted command template string, all the possible arguments, and a function to parse the standard output, `MatrixTest` will handle the rest for you.
 After that, just wait and find the results in the Excel.
+
+Tutorial (this page)  
+[API Documentation](https://matrixtest.readthedocs.io/en/latest/)
 
 # How to use
 
