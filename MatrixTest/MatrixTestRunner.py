@@ -5,6 +5,7 @@ import colorama
 import string
 import shutil
 import textwrap
+import time
 
 from .Utils import *
 from .Printers import *
@@ -64,7 +65,7 @@ class MatrixTestRunner:
         return fields_matrix == fields_cmd
 
     def __init__(self, cmd: str, matrix: Dict[str, List[str]], parser: Callable[[str], Any] = None, enable_echo: bool = False,
-                 logfile: str = None):
+                 logfile: str = None, timing: bool = False):
         """
         Instantiate ``MatrixTestRunner``, checking the user input and initializing options.
 
@@ -77,6 +78,15 @@ class MatrixTestRunner:
         :param logfile: If given a file path, all the output (stdout) **of this function** will also be written to that file (in append mode).
             The content of this file will also be controlled by whether the echo feature is enabled or not
             (see also :func:`__init__`, :func:`enable_echo`, and :func:`disable_echo`).
+        :param timing: If True, the execution time of every attempt will be recorded, just like you run your command
+            with `time <https://man7.org/linux/man-pages/man1/time.1.html>`_ but here the time is measured as the life
+            time of the child process.
+
+                We recommend you to measure the fine-grained execution time inside the benchmark
+                if an accurate execution time is desired or the execution time is very short.
+
+                If the result returned from parser function includes a key of "time" (this is how the execution time is recorded,
+                this feature will be disabled and a warning will be displayed.
         """
 
         colorama.init()  # enable ANSI support on Windows for colored output
@@ -123,6 +133,7 @@ class MatrixTestRunner:
             self.__log_enabled = False
         self.__log_fd = None        # type: Optional[TextIO]
                                     # The log file will be opened later
+        self.__timing_enabled = timing
 
         # options
         self.__option_echo = enable_echo
@@ -184,6 +195,8 @@ class MatrixTestRunner:
 
                 stdout = ""
 
+                start_time = time.perf_counter()
+
                 proc = subprocess.Popen(current_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
 
                 for line in proc.stdout:
@@ -192,6 +205,9 @@ class MatrixTestRunner:
                     stdout += line
 
                 returncode = proc.wait()
+
+                end_time = time.perf_counter()
+                elapsed_time = end_time - start_time
 
                 if self.__option_echo:
                     print_plain(("{:-<%d}" % (self.__terminal_width-1)).format(' '*len(prefix)+'+'), self.__log_fd)
@@ -206,6 +222,14 @@ class MatrixTestRunner:
 
                 # parse the result
                 current_result_parsed = self.__parser(str(stdout))
+
+                # record the execution time
+                if self.__timing_enabled:
+                    if "time" in current_result_parsed:
+                        print_warning("\"time\" is already in the result, timing is not recorded and will be disabled for future attempts.")
+                        self.__timing_enabled = False
+                    else:
+                        current_result_parsed["time"] = elapsed_time
 
                 # record the result
                 if isinstance(current_result_parsed, dict):  # if the parser function returns a dict (multiple results)
@@ -244,6 +268,8 @@ class MatrixTestRunner:
         """
         This function compute the arithmetic mean of selected columns.
         The results will store in the same dataframe with names of "avg_*".
+
+        If you would like to include execution time when timing is enabled, just add ``"time"`` to the column list.
 
         :param column: str or List of str. Name(s) of selected column(s). If any column does not exist in the result, the
                     calculation will be skipped. Generally, this should be a subset of the keys returned by the parser function.
@@ -375,3 +401,19 @@ class MatrixTestRunner:
             print_info("Adding new log file path. Logging is enabled.")
         self.__log_enabled = True
         self.__log_file = filepath
+
+    def enable_timing(self) -> None:
+        """
+        Enable timing.
+
+        :return: None
+        """
+        self.__timing_enabled = True
+
+    def disable_timing(self) -> None:
+        """
+        Disable timing.
+
+        :return: None
+        """
+        self.__timing_enabled = False
