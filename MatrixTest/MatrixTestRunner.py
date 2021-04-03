@@ -1,4 +1,4 @@
-from typing import Dict, List, Callable, Any, Union, Optional
+from typing import Dict, List, Callable, Any, Union, Optional, TextIO
 import subprocess
 import pandas as pd
 import colorama
@@ -63,7 +63,8 @@ class MatrixTestRunner:
         fields_cmd.sort()
         return fields_matrix == fields_cmd
 
-    def __init__(self, cmd: str, matrix: Dict[str, List[str]], parser: Callable[[str], Any] = None, enable_echo: bool = False):
+    def __init__(self, cmd: str, matrix: Dict[str, List[str]], parser: Callable[[str], Any] = None, enable_echo: bool = False,
+                 logfile: str = None):
         """
         Instantiate ``MatrixTestRunner``, checking the user input and initializing options.
 
@@ -73,6 +74,9 @@ class MatrixTestRunner:
         :param matrix: The possible arguments.
         :param parser: The parser function.
         :param enable_echo: If ``True``, the ``stdout`` and ``stderr`` of the the command will be piped and print in real time.
+        :param logfile: If given a file path, all the output (stdout) **of this function** will also be written to that file (in append mode).
+            The content of this file will also be controlled by whether the echo feature is enabled or not
+            (see also :func:`__init__`, :func:`enable_echo`, and :func:`disable_echo`).
         """
 
         colorama.init()  # enable ANSI support on Windows for colored output
@@ -111,35 +115,31 @@ class MatrixTestRunner:
         self.__last_repeat = 0
         self.__last_aggregated_columns = []
         # log to file
-        self.__log_enabled = False
-        self.__log_fd = None        # type: Optional[io.TextIOBase]
-        self.__log_file = None       # type: Optional[str]
+        if logfile is not None:
+            self.__log_file = logfile
+            self.__log_enabled = True
+        else:
+            self.__log_file = None
+            self.__log_enabled = False
+        self.__log_fd = None        # type: Optional[TextIO]
+                                    # The log file will be opened later
 
         # options
         self.__option_echo = enable_echo
         self.__terminal_width, _ = shutil.get_terminal_size()       # this is used by self.__option_echo
 
-    def run(self, repeat: int = 1, logfile: str = None) -> None:
+    def run(self, repeat: int = 1) -> None:
         """
         Run the test suite and record the results.
 
         :param repeat: The number of times the test should be repeated for.
-        :param logfile: If given a file path, all the output (stdout) **of this function** will also be written to that file (in append mode).
-            The content of this file will also be controlled by whether the echo feature is enabled or not
-            (see also :func:`__init__`, :func:`enable_echo`, and :func:`disable_echo`).
         :return: None. The results will be stored internally. You can use :func:`get_last_result` to get the last result
             as a `pandas.DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
         """
         # log to file
-        if logfile is not None:
-            self.__log_file = logfile
-            self.__log_enabled = True
-            self.__log_fd = open(self.__log_file, 'a')  # in append mode
+        if self.__log_enabled:
+            self.__log_fd = open(self.__log_file, 'a')
             print("Console output will be written to " + self.__log_file)
-        else:
-            self.__log_file = None
-            self.__log_fd = None
-            self.__log_enabled = False
 
         if repeat < 1:
             print_error("repeat must be at least 1.", self.__log_fd)
@@ -231,6 +231,7 @@ class MatrixTestRunner:
         print_plain("All done.", self.__log_fd)
         if self.__log_enabled:
             self.__log_fd.close()
+            self.__log_fd = None
 
     def get_last_result(self) -> pd.DataFrame:
         """
@@ -346,3 +347,31 @@ class MatrixTestRunner:
         See also: :func:`enable_echo`
         """
         self.__option_echo = False
+
+    def disable_log(self) -> None:
+        """
+        Disable log to file feature.
+
+        :return: None
+        """
+        self.__log_file = None
+        self.__log_enabled = False
+
+    def change_logfile(self, filepath: str) -> None:
+        """
+        Change the log file path. This may enable or disable the feature, if provided a empty string or did not provide
+        a ``logfile`` at constructor, respectively.
+
+        :param filepath: The path to the log file.
+        :return: None
+
+        See also :func:`disable_log`
+        """
+        if filepath == "":
+            print_info("New log file path is empty. Logging is disabled.")
+            self.disable_log()
+            return
+        if not self.__log_enabled:
+            print_info("Adding new log file path. Logging is enabled.")
+        self.__log_enabled = True
+        self.__log_file = filepath

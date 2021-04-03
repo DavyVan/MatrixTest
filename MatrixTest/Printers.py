@@ -3,7 +3,7 @@ This module include variants of print function. They are necessary to support ``
 Also, support colored output in console.
 """
 
-import io
+from typing import TextIO
 
 COLOR_OK = "\033[92m"
 COLOR_FAIL = "\033[91m"
@@ -11,7 +11,7 @@ COLOR_WARNING = "\033[93m"
 COLOR_NORMAL = "\033[0m"
 
 
-def print_ok(msg: str = "OK.", fd: io.TextIOBase = None) -> None:
+def print_ok(msg: str = "OK.", fd: TextIO = None) -> None:
     """
     Print in ``green`` color (ASCII code = ``\033[92m``) color. The color will be recovered to normal before this function returns.
 
@@ -24,7 +24,7 @@ def print_ok(msg: str = "OK.", fd: io.TextIOBase = None) -> None:
         fd.write(msg + '\n')
 
 
-def print_warning(msg: str, fd: io.TextIOBase = None):
+def print_warning(msg: str, fd: TextIO = None):
     """
     Print in ``yellow`` color (ASCII code = ``\033[93m``). The color will be recovered to normal before this function returns.
 
@@ -37,7 +37,7 @@ def print_warning(msg: str, fd: io.TextIOBase = None):
         fd.write("WARNING: " + msg + '\n')
 
 
-def print_error(msg: str, fd: io.TextIOBase = None):
+def print_error(msg: str, fd: TextIO = None):
     """
     Print in ``red`` color (ASCII code = ``\033[91m``). The color will be recovered to normal before this function returns.
 
@@ -50,7 +50,7 @@ def print_error(msg: str, fd: io.TextIOBase = None):
         fd.write("ERROR: " + msg + '\n')
 
 
-def print_aborted(fd: io.TextIOBase = None):
+def print_aborted(fd: TextIO = None):
     """
     Print in ``red`` color (ASCII code = ``\033[91m``) and exit with return code 1.
     The color will be recovered to normal before this function returns.
@@ -63,7 +63,7 @@ def print_aborted(fd: io.TextIOBase = None):
     exit(1)
 
 
-def print_info(msg: str, fd: io.TextIOBase = None):
+def print_info(msg: str, fd: TextIO = None):
     """
     Print with prefix ``INFO:``
 
@@ -76,7 +76,7 @@ def print_info(msg: str, fd: io.TextIOBase = None):
         fd.write("INFO: " + msg + '\n')
 
 
-def print_plain(msg: str, fd: io.TextIOBase = None, end: str = '\n'):
+def print_plain(msg: str, fd: TextIO = None, end: str = '\n'):
     """
     Just print.
 
