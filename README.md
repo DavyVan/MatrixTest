@@ -11,8 +11,7 @@ Using `MatrixTest`, the only a few things you need to do are: configure, run, an
 By providing a formatted command template string, all the possible arguments, and a function to parse the standard output, `MatrixTest` will handle the rest for you.
 After that, just wait and find the results in the Excel.
 
-Tutorial (this page)  
-[API Documentation](https://matrixtest.readthedocs.io/en/latest/)
+__*This tutorial only show the very basic usage, for full functionalities, please refer to the [API Documentation](https://matrixtest.readthedocs.io/en/latest/).*__
 
 # How to use
 
@@ -162,12 +161,6 @@ Generally, we recommend you to output your data to an Excel spreadsheet for furt
 ```
 
 The first parameter is the output file path. Also, you can choose whether include raw/aggregated data in the Excel or not via the last two parameters.
-
-Files of this example are available at:
-
-* [cmd_example_program.py](cmd_example_program.py)
-* [example.py](example.py)
-* [example_output.xlsx](example_output.xlsx)
 
 # Contributing
 

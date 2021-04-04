@@ -6,9 +6,24 @@ import string
 import shutil
 import textwrap
 import time
+import signal
 
 from .Utils import *
 from .Printers import *
+
+
+def sigint_handler_wrapper(obj: "MatrixTestRunner"):
+    """
+    ``SIGINT`` handler wrapper. Upon SIGINT (Ctrl-C is pressed), output the results already collected to ``stdout`` then abort.
+    """
+    def sigint_handler(signum, frame):
+        print_warning("Process killed by user.")
+        terminal_width, _ = shutil.get_terminal_size()
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None, 'display.width', terminal_width):  # more options can be specified also
+            print(obj.get_partial_result())
+
+        print_aborted()
+    return sigint_handler
 
 
 class MatrixTestRunner:
@@ -122,6 +137,7 @@ class MatrixTestRunner:
 
         # declare variables for a single run
         self.__last_result = None   # type: Optional[pd.DataFrame]
+        self.__last_record = None   # type: Optional[dict[str, Any]]
         self.__last_repeat = 0
         self.__last_aggregated_columns = []
         # log to file
@@ -139,6 +155,9 @@ class MatrixTestRunner:
         self.__option_echo = enable_echo
         self.__terminal_width, _ = shutil.get_terminal_size()       # this is used by self.__option_echo
 
+        # Ctrl-C handler
+        signal.signal(signal.SIGINT, sigint_handler_wrapper(self))
+
     def run(self, repeat: int = 1) -> None:
         """
         Run the test suite and record the results.
@@ -146,6 +165,10 @@ class MatrixTestRunner:
         :param repeat: The number of times the test should be repeated for.
         :return: None. The results will be stored internally. You can use :func:`get_last_result` to get the last result
             as a `pandas.DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
+
+        You can press ``Ctrl-C`` to interrupt the process and get the partial results that have already collected.
+        Because Python runtime will forward signal to the child process so the running command will be interrupted also
+        and you may see an error from its stdout.
         """
         # log to file
         if self.__log_enabled:
@@ -164,7 +187,7 @@ class MatrixTestRunner:
         results_columns += self.__arg_keys
         # for i in range(repeat):
         #     results_columns.append("attempt" + str(i+1))
-        results = pd.DataFrame(columns=results_columns)
+        self.__last_result = pd.DataFrame(columns=results_columns)
 
         # configure the arg fields and run
         # init
@@ -237,7 +260,9 @@ class MatrixTestRunner:
                         record["attempt" + str(attempt + 1) + "_" + key] = current_result_parsed[key]
                 else:       # single result
                     record["attempt" + str(attempt + 1)] = current_result_parsed
-            results = results.append(record, ignore_index=True)
+                self.__last_record = record
+            self.__last_result = self.__last_result.append(record, ignore_index=True)
+            self.__last_record = None       # reset on the row completion
 
             # get the next or break
             i = self.__nargs - 1
@@ -251,7 +276,6 @@ class MatrixTestRunner:
             if i == -1:  # finished all test cases
                 break
 
-        self.__last_result = results
         print_plain("All done.", self.__log_fd)
         if self.__log_enabled:
             self.__log_fd.close()
@@ -262,6 +286,15 @@ class MatrixTestRunner:
 
         :return: Return the internal dataframe storing the final results.
         """
+        return self.__last_result
+
+    def get_partial_result(self) -> pd.DataFrame:
+        """
+
+        :return: Return the internal dataframe storing the final results. The last row may not be complete.
+        """
+        if self.__last_record is not None:
+            self.__last_result = self.__last_result.append(self.__last_record, ignore_index=True)
         return self.__last_result
 
     def average(self, column: Union[str, List[str]] = None) -> None:
