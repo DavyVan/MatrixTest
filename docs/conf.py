@@ -22,7 +22,7 @@ copyright = '2021, Quan Fan'
 author = 'Quan Fan'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0.0'
+release = '1.3.0'
 
 
 # -- General configuration ---------------------------------------------------

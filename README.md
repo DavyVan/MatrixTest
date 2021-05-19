@@ -15,6 +15,9 @@ __*This tutorial only show the very basic usage, for full functionalities, pleas
 
 # How to use
 
+---
+
+
 `MatrixTest` is a pure Python module so that you need to install and import it into your Python test script.
 
 In the following How-tos, a toy script will be used as the executable.
@@ -44,6 +47,9 @@ arg3                        # argv[3]
 
 ## Install
 
+---
+
+
 ```shell
 pip install MatrixTest
 ```
@@ -54,6 +60,8 @@ import MatrixTest
 ```
 
 ## Configure `MatrixTestRunner`
+
+---
 
 `MatrixTestRunner` is the main component of `MatrixTest` package.
 You need to pass all the required information via its constructor:
@@ -107,6 +115,8 @@ Finally, just pass all three parameters into the `MatrixTestRunner` constructor 
 
 ## Run
 
+---
+
 To start testing, call the `run()` function with a integer indicating how many times you would like to execute repeatly:
 
 ```python
@@ -115,6 +125,8 @@ To start testing, call the `run()` function with a integer indicating how many t
 ```
 
 ## Aggregate (statistics result)
+
+---
 
 After getting the raw data, you may calculate the aggregated results from it. Take arithmetic mean as the example here:
 
@@ -129,6 +141,8 @@ For now, we support the following aggregation operators:
 * average (arithmetic mean)
 
 ## Access the results
+
+---
 
 We use `pandas.DataFrame` to store all the results for the current run.
 Both raw data and aggregated data are stored in a single DataFrame.
@@ -161,6 +175,48 @@ Generally, we recommend you to output your data to an Excel spreadsheet for furt
 ```
 
 The first parameter is the output file path. Also, you can choose whether include raw/aggregated data in the Excel or not via the last two parameters.
+
+## Email Notification Service
+
+---
+
+From version `1.3.0`, you have the option to send an email to a designated email address when the experiments finished (i.e. at the end of `run()`)
+or when the Excel file is generated (i.e. at the end of `to_excel()`) then you will find the Excel file in the attachment.
+
+### How to enable email notification
+
+First, you need to instantiate a `EmailProvider`:
+```python
+    email_provider = MatrixTest.EmailService.MailjetProvider(api_key='xxxx',
+                                                             api_secret='xxxx')
+```
+
+For now we only support the [Mailjet](https://mailjet.com) as the email service vendor.
+
+__Please note:__ There is a key pair in the `example.py` that you can use for free. But please __DO NOT__ send more than
+200 emails per day. That is the limit of Mailjet free account. We encourage you to create your own account and then replace
+the keys if you expect to receive a lot of emails.
+
+Then, register the provider to `MatrixTestRunner` and enable the feature:
+```python
+    mtr.register_email_service(email_provider, "example@example.com")
+    mtr.enable_email_notification()
+```
+Only one recipient is allowed.
+
+You can also do this at initialization, refer to the [doc](https://matrixtest.readthedocs.io/en/latest/MatrixTestRunner.html#MatrixTest.MatrixTestRunner.MatrixTestRunner.__init__).
+
+__Please note:__ By enabling this, you will only receive a notification which includes the argument matrix for your reference.
+Keep reading if you want to receive the Excel file.
+
+To receive a copy of the generate Excel file, just set the `send_by_email` argument to `True`. However, you still need to 
+register the provider and recipient.
+```python
+    mtr.to_excel("./example_output.xlsx", send_by_email=True)
+```
+
+__Please note:__ You will receive two emails if you enable both of above. Usually, if you want to receive the Excel file,
+just enable it once when you call `to_excel()`.
 
 # Contributing
 

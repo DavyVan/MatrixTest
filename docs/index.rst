@@ -15,6 +15,7 @@ If you are looking for the tutorial, please go to `Github <https://github.com/Da
    MatrixTestRunner
    Printers
    Utils
+   EmailService
 
 
 Indices and tables
