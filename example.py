@@ -14,7 +14,8 @@ def parser(stdout: str):
 
 
 def main():
-    cmd_template = "python E:\\MatrixTest\\cmd_example_program.py {arg1} {arg2} {arg3}"
+    # cmd_template = "python E:\\MatrixTest\\cmd_example_program.py {arg1} {arg2} {arg3}"
+    cmd_template = "python cmd_example_program.py {arg1} {arg2} {arg3}"
     args = {
         "arg1": ["arg1_1"],
         "arg2": ["arg2_1", "arg2_2", "arg2_3"],
@@ -27,7 +28,7 @@ def main():
                                                             # If you will send more than 200 emails per day,
                                                             # please create your own Mailjet account and replace the keys.
     mtr.register_email_service(email_provider, "davy.van.fq@gmail.com")
-    mtr.enable_email_notification()
+    # mtr.enable_email_notification()
 
     # mtr.run()
     mtr.run(3)
@@ -40,7 +41,8 @@ def main():
     # with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
     # print(results)
 
-    mtr.to_excel("E:\\MatrixTest\\example_output.xlsx", include_agg=True, include_raw=True, send_by_email=True)
+    # mtr.to_excel("E:\\MatrixTest\\example_output.xlsx", include_agg=True, include_raw=True, send_by_email=True)
+    mtr.to_excel("~/example_output.xlsx", include_agg=True, include_raw=True, send_by_email=True)
 
 
 if __name__ == '__main__':

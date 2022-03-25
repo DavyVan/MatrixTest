@@ -1,3 +1,4 @@
+import os.path
 from typing import Dict, List, Callable, Any, Union, Optional, TextIO
 import subprocess
 import pandas as pd
@@ -109,8 +110,8 @@ class MatrixTestRunner:
             service provider and the recipient must be given either by the following two arguments or by calling
             :func:`enable_email_notification()`.
 
-            Please note: if you also set ``send_by_email`` when calling :func:`to_excel()`, you will receive two emails
-            with same content but one of them has attachment.
+                Please note: if you also set ``send_by_email`` when calling :func:`to_excel()`, you will receive two emails
+                with same content but one of them has attachment.
         :param email_provider: Instance of email service provider. Refer to :mod:`EmailService`.
         :param email_recipient: The email address of recipient. Only one recipient is allowed.
         """
@@ -153,7 +154,7 @@ class MatrixTestRunner:
         self.__last_aggregated_columns = []
         # log to file
         if logfile is not None:
-            self.__log_file = logfile
+            self.__log_file = os.path.expanduser(logfile)
             self.__log_enabled = True
         else:
             self.__log_file = None
@@ -384,8 +385,8 @@ class MatrixTestRunner:
         :param send_by_email: If ``True``, the generated Excel file will be sent via email. The email provider and recipient
             must be registered at initialization or by calling :func:`enable_email_notification()`.
 
-            Please note: if you also set ``enable_email_notification`` at initialization or by calling :func:`enable_email_notification()`,
-            you will receive two emails with same content but one of them has attachment.
+                Please note: if you also set ``enable_email_notification`` at initialization or by calling :func:`enable_email_notification()`,
+                you will receive two emails with same content but one of them has attachment.
         :return: None
         """
 
@@ -498,7 +499,7 @@ class MatrixTestRunner:
         if not self.__log_enabled:
             print_info("Adding new log file path. Logging is enabled.")
         self.__log_enabled = True
-        self.__log_file = filepath
+        self.__log_file = os.path.expanduser(filepath)
 
     def enable_timing(self) -> None:
         """

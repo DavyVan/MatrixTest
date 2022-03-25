@@ -18,6 +18,7 @@ class MailjetProvider(EmailProvider):
     def send(self, matrix: Dict[str, List[str]], to: str, attachment_path: str = None) -> bool:
         # check attached file size
         if attachment_path is not None:
+            attachment_path = os.path.expanduser(attachment_path)
             if os.stat(attachment_path).st_size / 1024 / 1024 >= 15:        # >= 15MB
                 print("Attached file is too large.")
                 return False
